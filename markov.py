@@ -38,7 +38,45 @@ class SimpleMarkovGenerator(object):
         """Takes dictionary of markov chains; returns random text."""
 
         key = choice(chains.keys())
-        # words = [key[0], key[1]]
+        words = [key[0], key[1]]
+
+        while key in chains:
+            # Keep looping until we have a key that isn't in the chains
+            # (which would mean it was the end of our original text)
+            #
+            # Note that for long texts (like a full book), this might mean
+            # it would run for a very long time.
+
+            word = choice(chains[key])
+            words.append(word)
+            key = (key[1], word)
+
+        return " ".join(words)
+
+
+class LowercaseMixin(object):
+    def lowercase_text(self, words):
+        """Given a string of words, make all text lowercase."""
+
+        words = words.lower()
+
+        return words
+
+
+class StripPunctuationMixin(object):
+    def strip_text(self, words):
+        """Given a string of words, replace the punctuation."""
+
+        words = words.translate(None, '''.',?!"''')
+
+        return words
+
+
+class TweetableMarkovGenerator(SimpleMarkovGenerator,LowercaseMixin,StripPunctuationMixin):
+    def make_text(self, chains):
+        """Takes dictionary of markov chains; returns random text."""
+
+        key = choice(chains.keys())
         words = ''
 
         counter = 0
@@ -57,8 +95,8 @@ class SimpleMarkovGenerator(object):
                 key = (key[1], word)
             counter += 1
 
-        # return " ".join(words)
         return words
+
 
 if __name__ == "__main__":
 
@@ -67,12 +105,20 @@ if __name__ == "__main__":
     # we should call the read_files method with the list of filenames
     # we should call the make_text method 5x
 
-    filenames = [sys.argv[1], sys.argv[2]]
-    # filenames = sys.argv[1]
+    filenames = sys.argv[1:]
 
-    instance1 = SimpleMarkovGenerator()
+    instance1 = TweetableMarkovGenerator()
     input_text = instance1.read_files(filenames)
     chains = instance1.make_chains(input_text)
-    random_text = instance1.make_text(chains) 
+    user_input = raw_input("Type in one choice: random, lowercase, or stripped? ")
+
+    if user_input == 'random':
+        random_text = instance1.make_text(chains) 
+    elif user_input == 'lowercase':
+        random_text = instance1.make_text(chains) 
+        random_text = instance1.lowercase_text(random_text)
+    elif user_input == 'stripped':
+        random_text = instance1.make_text(chains) 
+        random_text = instance1.strip_text(random_text)
 
     print random_text
